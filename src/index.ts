@@ -1,19 +1,26 @@
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, LocalAuth } from 'whatsapp-web.js';
 import { EventHandler } from './events/event-handler';
-import dotenv from 'dotenv'; 
+import qrcode from 'qrcode-terminal';
+import dotenv from 'dotenv';
 import express from 'express';
 dotenv.config();
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox']
+  }
 });
 
-client.once('ready', async () => {
-  EventHandler.OnStart(client);
+client.on('qr', (qr) => {
+  qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', async () => {
+  await EventHandler.OnStart(client);
 });
 
 console.log(process.env.BOT_KEY)
-client.login(`${process.env.BOT_KEY}`);
 
 // ==== SERVIDOR FAKE PARA ABRIR UMA PORTA ====
 const app = express();
@@ -26,3 +33,5 @@ app.get('/', (_req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor web rodando na porta ${PORT}`);
 });
+
+client.initialize();
